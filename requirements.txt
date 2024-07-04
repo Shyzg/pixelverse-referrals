@@ -1,3 +1,2 @@
 colorama==0.4.6
-Faker==25.9.1
 Requests==2.32.3
