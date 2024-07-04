@@ -9,6 +9,7 @@ import re
 import string
 import requests
 
+
 class Pixel:
     def __init__(self):
         with open('config.json', 'r') as file:
@@ -29,18 +30,23 @@ class Pixel:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/126.0.0.0 Safari/537.36'
         }
 
-    def generate_email(self, email):
-        email_parts = email.split('@')
-        random_string = ''.join(random.choices(string.ascii_lowercase, k=8))
-        generated_email = f"{email_parts[0]}+{random_string}@{email_parts[1]}"
-        return generated_email
-
     def generate_emails(self):
-        generated_emails = [self.generate_email(self.email) for _ in range(self.count)]
+        email_parts = self.email.split('@')
+        generated_emails = []
+
+        for _ in range(self.count):
+            random_string = ''.join(random.choices(string.ascii_lowercase, k=8))
+            generated_email = f'{email_parts[0]}+{random_string}@{email_parts[1]}'
+            generated_emails.append(generated_email)
+
         with open('emails.txt', 'w') as file:
             for email in generated_emails:
-                file.write(f"{email}\n")
-        return print(f'{Fore.GREEN + Style.BRIGHT}[ Generated {self.count} Emails ]')
+                file.write(f'{email}\n')
+        with open('emails.txt', 'r') as file:
+            emails = file.read().strip().split('\n')
+                
+        print(f'📧 {Fore.GREEN + Style.BRIGHT}[ Generated {self.count} Emails ]')
+        return emails
 
     def connect_imap(self):
         mail = imaplib.IMAP4_SSL("imap-mail.outlook.com")
@@ -71,11 +77,11 @@ class Pixel:
                             return body
         return None
     
-    def extractOtp(self, body):
+    def extract_otp(self, body):
         otp_match = re.search(r'Here is your Pixelverse OTP: (\d+)', body)
         return otp_match.group(1) if otp_match else None
 
-    def requestOtp(self, email, proxy):
+    def request_otp(self, email, proxy):
         url = 'https://api.pixelverse.xyz/api/otp/request'
         payload = {
             'email': email
@@ -91,7 +97,7 @@ class Pixel:
             print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: requestOtp() {e}")
             return None
 
-    def verifyOtp(self, email, otp, proxy):
+    def verify_otp(self, email, otp, proxy):
         url = 'https://api.pixelverse.xyz/api/auth/otp'
         payload = {
             'email': email,
@@ -111,7 +117,7 @@ class Pixel:
             print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: verifyOtp() {e}")
             return None
 
-    def setReferrals(self, access_token, proxy):
+    def set_referrals(self, access_token, proxy):
         url = f'https://api.pixelverse.xyz/api/referrals/set-referer/{self.referrals}'
         self.headers['Authorization'] = access_token
         proxies = {
@@ -122,5 +128,5 @@ class Pixel:
             req.raise_for_status()
             return req.status_code in [200, 201]
         except (ValueError, json.JSONDecodeError, requests.RequestException) as e:
-            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: setReferrals() {e}")
+            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: set_referrals {e}")
             return None

@@ -1,9 +1,10 @@
 from colorama import Fore, Style, init
 from Pixel import Pixel
+from Proxy import Proxy
 import os
-import requests
 import sys
 import time
+
 
 def clear():
     if os.name == 'nt':
@@ -11,53 +12,34 @@ def clear():
     else:
         os.system('clear')
 
-def is_proxy_live(proxy):
-    try:
-        url = 'http://httpbin.org/ip'
-        proxies = {
-            'http': f'http://{proxy}',
-            'https': f'http://{proxy}'
-        }
-        response = requests.get(url, proxies=proxies, timeout=5)
-        if response.status_code == 200:
-            return True
-    except:
-        return False
-    return False
-
 def main():
     init()
-    pixel = Pixel()
-    pixel.generate_emails()
-    time.sleep(5)
-    with open('emails.txt', 'r') as file:
-        emails = [line.strip() for line in file.readlines()]
-    mail = pixel.connect_imap()
-    response = requests.get('https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&proxy_format=ipport&format=text')
-    with open('proxies.txt', 'w') as file:
-        file.write(response.text)
-    time.sleep(5)
-    with open('proxies.txt', 'r') as f:
-        proxies = [line.strip() for line in f.readlines() if line.strip()]
+    pix = Pixel()
+    pro = Proxy()
+    emails = pix.generate_emails()
+    proxies = pro.get_proxies()
+    connect_imap = pix.connect_imap()
     proxy_index = 0
     for index, email in enumerate(emails, start=1):
         proxy = proxies[proxy_index]
-        while not is_proxy_live(proxy):
+
+        while not pro.is_proxy_live(proxy):
             proxy_index = (proxy_index + 1) % len(proxies)
             proxy = proxies[proxy_index]
+
         proxy_index = (proxy_index + 1) % len(proxies)
         print(f"📧 {Fore.CYAN+Style.BRIGHT}[ Progress {index} ]\t: {email}")
-        if pixel.requestOtp(email, proxy):
+        if pix.requestOtp(email, proxy):
             print(f"✅ {Fore.YELLOW+Style.BRIGHT}[ OTP Requested ]\t: {email}")
             time.sleep(10)
-            body = pixel.search_email(mail)
-            code = pixel.extractOtp(body)
+            body = pix.search_email(connect_imap)
+            code = pix.extractOtp(body)
             print(f"✅ {Fore.GREEN+Style.BRIGHT}[ OTP Received ]\t: {code}")
-            data = pixel.verifyOtp(email, code, proxy)
+            data = pix.verifyOtp(email, code, proxy)
             if data and 'access_token' in data:
                 access_token = data['access_token']
                 print(f"✅ {Fore.GREEN+Style.BRIGHT}[ Access Token Received ]")
-                if pixel.setReferrals(access_token, proxy):
+                if pix.setReferrals(access_token, proxy):
                     print(f"✅ {Fore.GREEN+Style.BRIGHT}[ Successfully Set Referrals ]")
                 else:
                     print(f"🍎 {Fore.RED+Style.BRIGHT}[ Failed To Set Referrals ]")
@@ -65,7 +47,7 @@ def main():
                 print(f"🍎 {Fore.RED+Style.BRIGHT}[ Failed To Get Access Token ]")
         else:
             print(f"🍎 {Fore.RED+Style.BRIGHT}[ Failed To Request OTP ]")
-    mail.logout()
+    connect_imap.logout()
 
 if __name__ == "__main__":
     while True:
