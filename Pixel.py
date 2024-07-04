@@ -1,4 +1,3 @@
-from colorama import Fore, Style
 from email import policy
 from email.header import decode_header
 from email.parser import BytesParser
@@ -6,8 +5,12 @@ import imaplib
 import json
 import random
 import re
-import requests
 import string
+import time
+
+from colorama import Fore, Style
+import requests
+
 
 class Pixel:
     def __init__(self):
@@ -31,7 +34,7 @@ class Pixel:
 
     def generate_email(self, email):
         email_parts = email.split('@')
-        random_string = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 8)))
+        random_string = ''.join(random.choices(string.ascii_lowercase, k=random.randint(6, 8)))
         generated_email = f"{email_parts[0]}+{random_string}@{email_parts[1]}"
         return generated_email
 
@@ -40,13 +43,13 @@ class Pixel:
         with open('email.txt', 'w') as file:
             for email in generated_emails:
                 file.write(f"{email}\n")
-            return print(f"🍏 {Fore.GREEN + Style.BRIGHT} [ {self.count} Email Successfully Generated ]")
+        return print(f"{Fore.GREEN + Style.BRIGHT}[ Generated {self.count} Emails ]")
 
     def connect_imap(self):
         mail = imaplib.IMAP4_SSL("imap-mail.outlook.com")
         mail.login(self.email, self.password)
         return mail
-
+    
     def search_email(self, mail):
         mail.select('inbox')
         status, messages = mail.search(None, 'ALL')
@@ -70,7 +73,7 @@ class Pixel:
                             body = msg.get_payload(decode=True).decode()
                             return body
         return None
-
+    
     def extractOtp(self, body):
         otp_match = re.search(r'Here is your Pixelverse OTP: (\d+)', body)
         return otp_match.group(1) if otp_match else None

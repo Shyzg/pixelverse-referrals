@@ -1,9 +1,10 @@
-from colorama import Fore, Style, init
-from Pixel import Pixel
-import os
-import requests
 import sys
 import time
+import os
+
+import requests
+from Pixel import Pixel
+from colorama import Fore, Style, init
 
 def clear():
     if os.name == 'nt':
