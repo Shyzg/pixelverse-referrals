@@ -25,13 +25,19 @@ def is_proxy_live(proxy):
     except requests.RequestException:
         return False
 
-with open('email.txt', 'r') as file:
-    emails = [line.strip() for line in file.readlines()]
-
-proxies = open("proxies.txt", "r").read().strip().split("\n")
-
 def main():
     init()
+
+    with open('email.txt', 'r') as file:
+        emails = [line.strip() for line in file.readlines()]
+
+    response = requests.get("https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&proxy_format=ipport&format=text")
+    with open("proxies.txt", "w") as file:
+        file.write(response.text)
+
+    with open("proxies.txt", "r") as file:
+        proxies = file.read().strip().split("\n")
+
     pixel = Pixel()
     pixel.generate_emails()
     mail = pixel.connect_imap()
