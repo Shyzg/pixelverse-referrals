@@ -29,17 +29,17 @@ def main():
 
         proxy_index = (proxy_index + 1) % len(proxies)
         print(f"📧 {Fore.CYAN+Style.BRIGHT}[ Progress {index} ]\t: {email}")
-        if pix.requestOtp(email, proxy):
+        if pix.request_otp(email, proxy):
             print(f"✅ {Fore.YELLOW+Style.BRIGHT}[ OTP Requested ]\t: {email}")
             time.sleep(10)
             body = pix.search_email(connect_imap)
-            code = pix.extractOtp(body)
+            code = pix.extract_otp(body)
             print(f"✅ {Fore.GREEN+Style.BRIGHT}[ OTP Received ]\t: {code}")
-            data = pix.verifyOtp(email, code, proxy)
+            data = pix.verify_otp(email, code, proxy)
             if data and 'access_token' in data:
                 access_token = data['access_token']
                 print(f"✅ {Fore.GREEN+Style.BRIGHT}[ Access Token Received ]")
-                if pix.setReferrals(access_token, proxy):
+                if pix.set_referrals(access_token, proxy):
                     print(f"✅ {Fore.GREEN+Style.BRIGHT}[ Successfully Set Referrals ]")
                 else:
                     print(f"🍎 {Fore.RED+Style.BRIGHT}[ Failed To Set Referrals ]")
