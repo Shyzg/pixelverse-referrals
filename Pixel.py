@@ -1,3 +1,4 @@
+from colorama import Fore, Style
 from email import policy
 from email.header import decode_header
 from email.parser import BytesParser
@@ -6,11 +7,7 @@ import json
 import random
 import re
 import string
-import time
-
-from colorama import Fore, Style
 import requests
-
 
 class Pixel:
     def __init__(self):
@@ -34,16 +31,16 @@ class Pixel:
 
     def generate_email(self, email):
         email_parts = email.split('@')
-        random_string = ''.join(random.choices(string.ascii_lowercase, k=random.randint(6, 8)))
+        random_string = ''.join(random.choices(string.ascii_lowercase, k=8))
         generated_email = f"{email_parts[0]}+{random_string}@{email_parts[1]}"
         return generated_email
 
     def generate_emails(self):
         generated_emails = [self.generate_email(self.email) for _ in range(self.count)]
-        with open('email.txt', 'w') as file:
+        with open('emails.txt', 'w') as file:
             for email in generated_emails:
                 file.write(f"{email}\n")
-        return print(f"{Fore.GREEN + Style.BRIGHT}[ Generated {self.count} Emails ]")
+        return print(f'{Fore.GREEN + Style.BRIGHT}[ Generated {self.count} Emails ]')
 
     def connect_imap(self):
         mail = imaplib.IMAP4_SSL("imap-mail.outlook.com")
