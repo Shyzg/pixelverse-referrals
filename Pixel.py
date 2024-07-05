@@ -8,6 +8,7 @@ import random
 import re
 import string
 import requests
+import time
 
 
 class Pixel:
@@ -38,6 +39,8 @@ class Pixel:
             random_string = ''.join(random.choices(string.ascii_lowercase, k=8))
             generated_email = f'{email_parts[0]}+{random_string}@{email_parts[1]}'
             generated_emails.append(generated_email)
+            
+        generated_emails.sort()
 
         with open('emails.txt', 'w') as file:
             for email in generated_emails:
@@ -45,7 +48,7 @@ class Pixel:
         with open('emails.txt', 'r') as file:
             emails = file.read().strip().split('\n')
                 
-        print(f'📧 {Fore.GREEN + Style.BRIGHT}[ Generated {self.count} Emails ]')
+        print(f"🧬 {Fore.GREEN + Style.BRIGHT}[ Generated {self.count} Emails ]")
         return emails
 
     def connect_imap(self):
@@ -83,19 +86,18 @@ class Pixel:
 
     def request_otp(self, email, proxy):
         url = 'https://api.pixelverse.xyz/api/otp/request'
-        payload = {
-            'email': email
-        }
-        proxies = {
-            'http': f'http://{proxy}'
-        }
+        payload = {'email': email}
+        proxies = {'http': f'http://{proxy}'}
         try:
-            req = requests.post(url, proxies=proxies, json=payload)
-            req.raise_for_status()
-            return req.status_code in [200, 201]
+            response = requests.post(url, proxies=proxies, json=payload)
+            if response.status_code == 429:
+                print(f"⏳ {Fore.YELLOW+Style.BRIGHT}[ {response.reason} Switching Proxy... ]")
+                return False
+            response.raise_for_status()
+            return response.status_code in [200, 201]
         except (ValueError, json.JSONDecodeError, requests.RequestException) as e:
-            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: requestOtp() {e}")
-            return None
+            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: {e}")
+            return False
 
     def verify_otp(self, email, otp, proxy):
         url = 'https://api.pixelverse.xyz/api/auth/otp'
@@ -103,30 +105,26 @@ class Pixel:
             'email': email,
             'otpCode': otp
         }
-        proxies = {
-            'http': f'http://{proxy}'
-        }
+        proxies = {'http': f'http://{proxy}'}
         try:
-            req = requests.post(url, proxies=proxies, json=payload)
-            req.raise_for_status()
-            data = req.json()
-            data['refresh_token'] = req.cookies.get('refresh-token')
+            response = requests.post(url, proxies=proxies, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            data['refresh_token'] = response.cookies.get('refresh-token')
             data['access_token'] = data['tokens']['access']
             return data
         except (ValueError, json.JSONDecodeError, requests.RequestException) as e:
-            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: verifyOtp() {e}")
+            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: {e}")
             return None
 
     def set_referrals(self, access_token, proxy):
         url = f'https://api.pixelverse.xyz/api/referrals/set-referer/{self.referrals}'
         self.headers['Authorization'] = access_token
-        proxies = {
-            'http': f'http://{proxy}'
-        }
+        proxies = {'http': f'http://{proxy}'}
         try:
-            req = requests.put(url, proxies=proxies, headers=self.headers)
-            req.raise_for_status()
-            return req.status_code in [200, 201]
+            response = requests.put(url, proxies=proxies, headers=self.headers)
+            response.raise_for_status()
+            return response.status_code in [200, 201]
         except (ValueError, json.JSONDecodeError, requests.RequestException) as e:
-            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: set_referrals {e}")
+            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: {e}")
             return None
