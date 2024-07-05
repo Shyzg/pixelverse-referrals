@@ -19,7 +19,7 @@ class Proxy:
         return proxies
 
     def is_proxy_live(self, proxy):
-        url = 'http://www.google.com'
+        url = 'http://httpbin.org/ip'
         proxies = {
             'http': f'http://{proxy}',
             'https': f'http://{proxy}'
