@@ -8,7 +8,6 @@ import random
 import re
 import string
 import requests
-import time
 
 
 class Pixel:
@@ -52,7 +51,7 @@ class Pixel:
         return emails
 
     def connect_imap(self):
-        mail = imaplib.IMAP4_SSL("imap-mail.outlook.com")
+        mail = imaplib.IMAP4_SSL('imap-mail.outlook.com')
         mail.login(self.email, self.password)
         return mail
     
