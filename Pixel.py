@@ -6,8 +6,9 @@ import imaplib
 import json
 import random
 import re
-import string
 import requests
+import string
+import time
 
 
 class Pixel:
@@ -32,23 +33,16 @@ class Pixel:
 
     def generate_emails(self):
         email_parts = self.email.split('@')
-        generated_emails = []
+        generated_emails = set()
 
         for _ in range(self.count):
             random_string = ''.join(random.choices(string.ascii_lowercase, k=8))
-            generated_email = f'{email_parts[0]}+{random_string}@{email_parts[1]}'
-            generated_emails.append(generated_email)
-            
-        generated_emails.sort()
+            emails = f'{email_parts[0]}+{random_string}@{email_parts[1]}'.strip().splitlines()
+            generated_emails.update(emails)
 
-        with open('emails.txt', 'w') as file:
-            for email in generated_emails:
-                file.write(f'{email}\n')
-        with open('emails.txt', 'r') as file:
-            emails = file.read().strip().split('\n')
-                
-        print(f"🧬 {Fore.GREEN + Style.BRIGHT}[ Generated {self.count} Emails ]")
-        return emails
+        sorted_emails = sorted(generated_emails)
+        print(f"🧬 {Fore.CYAN + Style.BRIGHT}[ Generated {len(sorted_emails)} Emails ]")
+        return sorted_emails
 
     def connect_imap(self):
         mail = imaplib.IMAP4_SSL('imap-mail.outlook.com')
@@ -86,16 +80,18 @@ class Pixel:
     def request_otp(self, email, proxy):
         url = 'https://api.pixelverse.xyz/api/otp/request'
         payload = {'email': email}
-        proxies = {'http': f'http://{proxy}'}
+        proxies = {'http': f"http://{proxy}"}
         try:
             response = requests.post(url, proxies=proxies, json=payload)
-            if response.status_code == 429:
-                print(f"⏳ {Fore.YELLOW+Style.BRIGHT}[ {response.reason} Switching Proxy... ]")
-                return False
+            time.sleep(5)
             response.raise_for_status()
-            return response.status_code in [200, 201]
+            print(f"📥 {Fore.BLUE + Style.BRIGHT}[ OTP Requested"
+                  f"{Fore.WHITE + Style.BRIGHT} | "
+                  f"{Fore.BLUE + Style.BRIGHT}{email} ]")
+            return True
         except (ValueError, json.JSONDecodeError, requests.RequestException) as e:
-            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: {e}")
+            print(f"🍓 {Fore.RED + Style.BRIGHT}[ {e} ]")
+            print(f"⏳ {Fore.YELLOW + Style.BRIGHT}[ Switching Proxies ]")
             return False
 
     def verify_otp(self, email, otp, proxy):
@@ -104,26 +100,33 @@ class Pixel:
             'email': email,
             'otpCode': otp
         }
-        proxies = {'http': f'http://{proxy}'}
+        proxies = {'http': f"http://{proxy}"}
         try:
             response = requests.post(url, proxies=proxies, json=payload)
+            time.sleep(3)
             response.raise_for_status()
             data = response.json()
             data['refresh_token'] = response.cookies.get('refresh-token')
             data['access_token'] = data['tokens']['access']
-            return data
+            print(f"🍏 {Fore.GREEN + Style.BRIGHT}[ Access Token Received ]")
+            self.set_referrals(data['access_token'], proxy)
+            return True
         except (ValueError, json.JSONDecodeError, requests.RequestException) as e:
-            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: {e}")
-            return None
+            print(f"🍓 {Fore.RED + Style.BRIGHT}[ {e} ]")
+            print(f"⏳ {Fore.YELLOW + Style.BRIGHT}[ Switching Proxies ]")
+            return False
 
     def set_referrals(self, access_token, proxy):
-        url = f'https://api.pixelverse.xyz/api/referrals/set-referer/{self.referrals}'
+        url = f"https://api.pixelverse.xyz/api/referrals/set-referer/{self.referrals}"
         self.headers['Authorization'] = access_token
-        proxies = {'http': f'http://{proxy}'}
+        proxies = {'http': f"http://{proxy}"}
         try:
             response = requests.put(url, proxies=proxies, headers=self.headers)
+            time.sleep(2)
             response.raise_for_status()
-            return response.status_code in [200, 201]
+            print(f"🍏 {Fore.GREEN + Style.BRIGHT}[ Successfully Set Referrals ]")
+            return True
         except (ValueError, json.JSONDecodeError, requests.RequestException) as e:
-            print(f"🍓 {Fore.RED+Style.BRIGHT}[ Error ]\t\t: {e}")
-            return None
+            print(f"🍓 {Fore.RED + Style.BRIGHT}[ {e} ]")
+            print(f"⏳ {Fore.YELLOW + Style.BRIGHT}[ Switching Proxies ]")
+            return False
